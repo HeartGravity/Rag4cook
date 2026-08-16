@@ -1,0 +1,77 @@
+# ========================
+# 1. 隐私与安全环境变量
+# ========================
+.env
+# .env.*
+*.key
+*.pem
+
+# ========================
+# 2. 数据库存储卷与挂载目录
+# ========================
+# Docker Compose 映射的本地持久化数据
+volumes/
+data/volumes/
+data/neo4j_data/
+data/neo4j_logs/
+data/neo4j_plugins/
+
+# 如果你的 CSV 原始数据集(nodes.csv/relationships.csv)非常庞大或涉及隐私，也可以取消下面两行的注释
+# data/cypher/*.csv
+# !data/cypher/sample_*.csv  # 可以保留一个脱敏的 sample 文件供他人参考
+
+# ========================
+# 3. Python 缓存与虚拟环境
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 虚拟环境
+venv/
+.venv/
+env/
+ENV/
+.env_python/
+
+# Python 构建与分发
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ========================
+# 4. 日志文件
+# ========================
+*.log
+logs/
+
+# ========================
+# 5. IDE 与操作系统文件
+# ========================
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm/IntelliJ
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
