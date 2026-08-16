@@ -7,7 +7,7 @@
 import os
 import json
 import sys
-from recipe_ai_agent import KimiRecipeAgent, RecipeKnowledgeGraphBuilder
+from backend.agent.recipe_ai_agent import KimiRecipeAgent, RecipeKnowledgeGraphBuilder
 
 def load_config():
     """加载配置文件"""

@@ -9,7 +9,7 @@ import json
 import sys
 import argparse
 from datetime import datetime
-from recipe_ai_agent import KimiRecipeAgent, RecipeKnowledgeGraphBuilder
+from backend.agent.recipe_ai_agent import KimiRecipeAgent, RecipeKnowledgeGraphBuilder
 
 def load_config():
     """加载配置文件"""

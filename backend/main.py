@@ -17,15 +17,15 @@ logger = logging.getLogger(__name__)
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from dotenv import load_dotenv
-from config import DEFAULT_CONFIG, GraphRAGConfig
-from rag_modules import (
+from backend.config import DEFAULT_CONFIG, GraphRAGConfig
+from backend.rag_modules import (
     GraphDataPreparationModule,
     MilvusIndexConstructionModule, 
     GenerationIntegrationModule
 )
-from rag_modules.hybrid_retrieval import HybridRetrievalModule
-from rag_modules.graph_rag_retrieval import GraphRAGRetrieval
-from rag_modules.intelligent_query_router import IntelligentQueryRouter, QueryAnalysis
+from backend.rag_modules.hybrid_retrieval import HybridRetrievalModule
+from backend.rag_modules.graph_rag_retrieval import GraphRAGRetrieval
+from backend.rag_modules.intelligent_query_router import IntelligentQueryRouter, QueryAnalysis
 
 # 加载环境变量
 load_dotenv()

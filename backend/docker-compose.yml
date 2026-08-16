@@ -88,8 +88,8 @@ services:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/neo4j/logs:/logs
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/neo4j/plugins:/plugins
       # 注意路径变更为从根目录指向 data/cypher
-      - ./data/cypher:/import
-      - ./data/cypher:/scripts
+      - ../data/cypher:/import
+      - ../data/cypher:/scripts
     restart: unless-stopped
     healthcheck:
       test:
@@ -107,7 +107,7 @@ services:
       neo4j:
         condition: service_healthy
     volumes:
-      - ./data/cypher:/scripts
+      - ../data/cypher:/scripts
     command: >
       sh -c "
         echo 'Waiting for Neo4j to be ready...' &&
