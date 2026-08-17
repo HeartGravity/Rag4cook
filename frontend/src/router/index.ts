@@ -1,7 +1,24 @@
-import { createRouter, createWebHashHistory, RouteRecordRaw } from "vue-router";
+import {
+  createRouter,
+  createWebHashHistory,
+  type RouteRecordRaw,
+} from "vue-router";
 import MainLayout from "@/layout/index.vue";
 
 const routes: Array<RouteRecordRaw> = [
+  {
+    path: "/",
+    component: MainLayout,
+    redirect: "/home",
+    children: [
+      {
+        path: "home",
+        name: "Home",
+        component: () => import("@/views/home/index.vue"),
+        meta: { title: "首页探索" },
+      },
+    ],
+  },
   {
     path: "/",
     component: MainLayout,

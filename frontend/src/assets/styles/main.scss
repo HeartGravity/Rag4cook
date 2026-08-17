@@ -1,0 +1,63 @@
+/* src/assets/styles/main.scss */
+
+:root {
+  /* 暖色调主题变量 */
+  --primary-color: #ff6a00;
+  --secondary-color: #ee0979;
+  --bg-warm-light: #fff5f0;
+  --text-main: #333333;
+  --text-light: #ffffff;
+  --sidebar-width: 200px;
+  --sidebar-collapsed-width: 15px; /* 边缘感应区宽度 */
+}
+
+body,
+html,
+#app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family:
+    "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* 动态暖色渐变背景 */
+.dynamic-bg {
+  background: linear-gradient(
+    -45deg,
+    #ff9a9e,
+    #fecfef,
+    #fff1eb,
+    #ffecd2,
+    #fcb69f
+  );
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 隐藏原生滚动条但保留滚动功能 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 106, 0, 0.3);
+  border-radius: 3px;
+}

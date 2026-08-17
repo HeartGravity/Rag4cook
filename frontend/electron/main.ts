@@ -20,7 +20,7 @@ const createWindow = () => {
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: true,
-      contextIsolation: false, // 简化初期开发，生产环境建议开启 isolation 并通过 preload 暴露 API
+      contextIsolation: true,
     },
   });
 
