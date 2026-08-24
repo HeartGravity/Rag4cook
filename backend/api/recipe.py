@@ -6,6 +6,7 @@ import logging
 from models.schemas import RecipeRecommendResponse, RecipeUploadResponse
 from services.storage_service import storage_service
 from services.recipe_manager import recipe_manager
+from services.rag_service import rag_system
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -13,25 +14,38 @@ router = APIRouter()
 @router.get("/recommend", response_model=List[RecipeRecommendResponse], summary="获取首页推荐菜谱")
 async def get_recommended_recipes(limit: int = 4):
     """
-    通过 Neo4j 获取随机推荐的菜谱列表 (实际应用中可以通过 rag_system.data_module 执行 Cipher 查询)
+    通过 Neo4j 获取随机推荐的菜谱列表
     """
-    # 占位：实际应写 Cipher MATCH (r:Recipe) WITH r, rand() AS weight ORDER BY weight LIMIT $limit RETURN r
-    return [
-        {
-            "id": "201000001",
-            "name": "红烧茄子",
-            "difficulty": 4,
-            "tags": ["家常菜", "下饭"],
-            "image_url": "http://localhost:8000/static/images/eggplant.jpg"
-        },
-        {
-            "id": "201000002",
-            "name": "番茄炒蛋",
-            "difficulty": 2,
-            "tags": ["快手菜", "酸甜"],
-            "image_url": "http://localhost:8000/static/images/tomato_egg.jpg"
-        }
-    ]
+    recipes = []
+    if rag_system.data_module and rag_system.data_module.driver:
+        try:
+            with rag_system.data_module.driver.session() as session:
+                # 随机抽取指定数量的菜谱
+                result = session.run("""
+                    MATCH (r:Recipe) 
+                    WITH r, rand() AS weight 
+                    ORDER BY weight 
+                    LIMIT $limit 
+                    RETURN r.nodeId AS id, r.name AS name, 
+                           r.difficulty AS difficulty, r.tags AS tags, r.imageUrl AS image_url
+                """, limit=limit)
+                
+                for record in result:
+                    recipes.append({
+                        "id": record["id"],
+                        "name": record["name"],
+                        "difficulty": record["difficulty"] if record["difficulty"] else 3,
+                        "tags": record["tags"].split(",") if record["tags"] else ["推荐"],
+                        "image_url": record["image_url"]
+                    })
+        except Exception as e:
+            logger.error(f"查询推荐菜谱失败: {e}")
+    
+    # 如果数据库中没有数据，提供一点默认保底数据
+    if not recipes:
+        recipes = [{"id": "fallback_1", "name": "暂无推荐", "difficulty": 3, "tags": [], "image_url": None}]
+        
+    return recipes
 
 @router.post("/upload", response_model=RecipeUploadResponse, summary="上传新菜谱 (Markdown + 图片)")
 async def upload_recipe(

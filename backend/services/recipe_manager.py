@@ -5,17 +5,22 @@ import os
 import uuid
 from typing import Tuple, Dict
 from fastapi import UploadFile
+from langchain_core.docuemnts import Document
 
 # 引入已有的 AI Agent
-from agent.recipe_ai_agent import KimiRecipeAgent, RecipeInfo
+from agent.recipe_ai_agent import KimiRecipeAgent, RecipeInfo, BailianRecipeAgent
+from services.rag_service import rag_system
 
 logger = logging.getLogger(__name__)
 
 class RecipeManager:
     def __init__(self):
         # 从环境变量或配置中读取 API KEY
-        self.kimi_api_key = os.getenv("KIMI_API_KEY", "your_kimi_api_key")
-        self.agent = KimiRecipeAgent(api_key=self.kimi_api_key)
+        # self.kimi_api_key = os.getenv("KIMI_API_KEY", "your_kimi_api_key")
+        # self.agent = KimiRecipeAgent(api_key=self.kimi_api_key)
+        self.api_key = os.getenv("DASHSCOPE_API_KEY", "")
+        self.llm_model = os.getenv("LLM_MODEL", "qwen3.6-flash")
+        self.agent = BailianRecipeAgent(api_key=self.api_key, llm_model=self.llm_model)
 
     def validate_markdown_structure(self, content: str) -> Tuple[bool, str]:
         """
@@ -58,9 +63,42 @@ class RecipeManager:
         # 示例：构建图节点和向量记录
         recipe_id = f"custom_{uuid.uuid4().hex[:8]}"
         
-        # TODO: 这里对接 graph_data_preparation.py 写入 Neo4j
-        # TODO: 这里对接 milvus_index_construction.py 写入 Milvus
-        
+        # 3.1 写入 Neo4j 图数据库
+        if rag_system.data_module and rag_system.data_module.driver:
+            with rag_system.data_module.driver.session() as session:
+                tags_str = ",".join(recipe_info.tags)
+                session.run(
+                    """
+                    MERGE (r:Recipe {nodeId: $node_id})
+                    SET r.name = $name, r.difficulty = $difficulty, 
+                        r.category = $category, r.tags = $tags, 
+                        r.imageUrl = $image_url, r.content = $content
+                    """,
+                    node_id=recipe_id, name=recipe_info.name, 
+                    difficulty=recipe_info.difficulty, category=recipe_info.category,
+                    tags=tags_str, image_url=image_url, content=content[:500]
+                )
+        else:
+            logger.warning("Neo4j 服务未连接，跳过图节点创建")
+
+        # 3.2 写入 Milvus 向量库
+        if rag_system.index_module:
+            doc = Document(
+                page_content=content,
+                metadata={
+                    "node_id": recipe_id,
+                    "recipe_name": recipe_info.name,
+                    "node_type": "Recipe",
+                    "category": recipe_info.category,
+                    "difficulty": recipe_info.difficulty,
+                    "doc_type": "recipe"
+                }
+            )
+            # 使用 MilvusIndexConstructionModule 中已有的 add_documents 方法
+            success = rag_system.index_module.add_documents([doc])
+            if not success:
+                logger.error("写入 Milvus 失败")
+
         logger.info(f"菜谱 {recipe_info.name} 解析与图谱入库完成。")
         
         return {
