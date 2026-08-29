@@ -65,6 +65,10 @@ logs/
 .vscode/
 *.code-workspace
 
+#=======================
+# 6. 数据文件
+#=======================
+ai_output/
 # PyCharm/IntelliJ
 .idea/
 *.iws

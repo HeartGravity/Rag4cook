@@ -136,7 +136,7 @@ class RecipeAgent:
                     model=self.model_name,
                     messages=messages,
                     temperature=0.3,
-                    max_tokens=2048,
+                    max_tokens=32768,
                     stream=False
                 )
                 
@@ -213,7 +213,7 @@ class RecipeAgent:
             "step_number": 1,
             "description": "步骤详细描述",
             "methods": ["使用的烹饪方法：炒、炸、煮、蒸、烤、炖、焖、煎、红烧、腌制、切等"],
-            "tools": ["需要的工具：炒锅、平底锅、蒸锅、刀、案板、筷子、锅铲、盆等"],
+            "tools": ["需要的工具：炒锅、平底锅、蒸锅、刀、案板、筷子、锅铲、盆子、勺子等"],
             "time_estimate": "时间估计（如步骤中提到'15秒'、'30秒'、'10-15分钟'等）"
         }}
     ],
@@ -234,6 +234,9 @@ class RecipeAgent:
 5. 菜谱分类支持多重分类：如早餐类的蔬菜粥可以分类为"早餐,素菜,主食"（逗号分隔）
 6. 当遇到"适量"、"少许"等非具体数值时，不要忘记加引号，如"amount": "适量"
 7. 只返回标准JSON格式，确保语法正确
+8. 所有的列表（如 tools, ingredients, methods）必须严格解析为【纯字符串数组】。如果原文中有并列、可选的工具，必须将其拆分为独立的数组元素。
+正确格式示例：
+"tools": ["筷子", "勺子", "炒锅"]
 """
 
         messages = [
@@ -297,10 +300,12 @@ class RecipeAgent:
         except json.JSONDecodeError as e:
             print(f"JSON解析错误: {e}")
             print(f"原始响应: {response}")
-            return self._fallback_parse(markdown_content)
+            # 抛出异常，阻止此文件被标记为已处理
+            raise ValueError(f"JSON解析失败，等待下次重试。错误: {e}")
         except Exception as e:
             print(f"AI解析错误: {e}")
-            return self._fallback_parse(markdown_content)
+            # 抛出异常，阻止此文件被标记为已处理
+            raise e
         
     def extract_tip_info(self, markdown_content: str, file_path: str = "") -> TipInfo:
         """使用AI提取厨房技巧(Tips)信息"""
@@ -345,6 +350,9 @@ class RecipeAgent:
 2. **安全优先**：留意文中带有“绝对不要”、“禁止”、“导致”、“风险”、“注意”等字眼的内容，将其归纳整理后放入 safety_warnings。
 3. **实体纯净化**：在提取 tools, ingredients, methods 时，尽量提取纯名词或动词（如提取“不粘锅”而不是“使用不粘锅”）。
 4. 必须只返回标准JSON字符串，不要包含多余的前缀或后缀解释。
+5. 所有的列表（如 tools, ingredients, methods）必须严格解析为【纯字符串数组】。如果原文中有并列、可选的工具，必须将其拆分为独立的数组元素。
+正确格式示例：
+"tools": ["筷子", "勺子", "炒锅"]
 """
         messages = [
             {"role": "system", "content": "你是一个专业的烹饪与厨房知识图谱构建专家。"},
@@ -375,9 +383,10 @@ class RecipeAgent:
                 safety_warnings=data.get("safety_warnings", []),
                 tags=data.get("tags", [])
             )
+        
         except Exception as e:
             print(f"AI解析Tip错误: {e}")
-            return TipInfo(name="解析失败", category="未知", description="")
+            raise ValueError(f"Tip JSON解析失败，等待下次重试。错误: {e}")
 
         
     def _fallback_parse(self, content: str) -> RecipeInfo:
@@ -997,7 +1006,11 @@ class RecipeKnowledgeGraphBuilder:
         import json
 
         # 处理NaN值和空值
-        if pd.isna(synonyms) or not synonyms:
+        if synonyms is None:
+            return ""
+        if isinstance(synonyms, float) and pd.isna(synonyms):
+            return ""
+        if not synonyms:
             return ""
 
         # 如果是字符串，尝试解析为JSON
