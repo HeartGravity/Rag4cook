@@ -7,33 +7,9 @@
         <p>基于图 RAG 的 AI 烹饪助手</p>
       </div>
 
-      <!-- 聊天记录区域 -->
+      <!-- 聊天记录区域 (使用通用组件替换) -->
       <div class="chat-history" ref="chatHistoryRef">
-        <div
-          v-for="(msg, index) in messages"
-          :key="index"
-          :class="[
-            'message-container',
-            msg.role === 'user' ? 'user-container' : 'ai-container',
-          ]"
-        >
-          <div
-            :class="[
-              'message',
-              msg.role === 'user' ? 'user-message' : 'ai-message',
-            ]"
-          >
-            <div
-              v-if="msg.role === 'ai'"
-              class="markdown-body"
-              v-html="renderMarkdown(msg.content)"
-            ></div>
-            <div v-else>{{ msg.content }}</div>
-            <div v-if="msg.strategy" class="strategy-tag">
-              策略: {{ msg.strategy }}
-            </div>
-          </div>
-        </div>
+        <ChatMessage v-for="(msg, index) in messages" :key="index" :msg="msg" />
       </div>
 
       <!-- 输入区域 -->
@@ -61,10 +37,9 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from "vue";
-import MarkdownIt from "markdown-it";
 import { useSettingsStore } from "@/stores/settings";
+import ChatMessage from "@/components/ChatMessage.vue"; // 引入通用气泡组件
 
-const md = new MarkdownIt({ breaks: true });
 const settings = useSettingsStore();
 
 interface Message {
@@ -79,8 +54,6 @@ const messages = ref<Message[]>([
 ]);
 const isGenerating = ref(false);
 const chatHistoryRef = ref<HTMLElement | null>(null);
-
-const renderMarkdown = (text: string) => md.render(text);
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -97,7 +70,6 @@ const sendMessage = async () => {
   inputMsg.value = "";
   isGenerating.value = true;
 
-  // 占位 AI 回复
   messages.value.push({ role: "ai", content: "" });
   const currentAiIndex = messages.value.length - 1;
   scrollToBottom();
@@ -125,7 +97,7 @@ const sendMessage = async () => {
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
-      buffer = lines.pop() || ""; // 保留未完整的块
+      buffer = lines.pop() || "";
 
       for (const line of lines) {
         if (line.startsWith("data: ")) {
@@ -151,7 +123,6 @@ const sendMessage = async () => {
 </script>
 
 <style scoped lang="scss">
-/* 继承你原有的样式 */
 .page-container {
   height: 100%;
   display: flex;
@@ -167,6 +138,15 @@ const sendMessage = async () => {
 .chat-header {
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   padding-bottom: 15px;
+  h2 {
+    margin: 0;
+    color: var(--primary-color);
+  }
+  p {
+    margin: 5px 0 0;
+    color: #666;
+    font-size: 14px;
+  }
 }
 .chat-history {
   flex: 1;
@@ -174,45 +154,6 @@ const sendMessage = async () => {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-}
-.message-container {
-  display: flex;
-  width: 100%;
-}
-.user-container {
-  justify-content: flex-end;
-}
-.ai-container {
-  justify-content: flex-start;
-}
-.message {
-  padding: 12px 18px;
-  border-radius: 12px;
-  max-width: 70%;
-  line-height: 1.5;
-}
-.user-message {
-  background: linear-gradient(
-    135deg,
-    var(--primary-color),
-    var(--secondary-color)
-  );
-  color: white;
-  border-bottom-right-radius: 2px;
-}
-.ai-message {
-  background: #fff;
-  color: #333;
-  border: 1px solid #eee;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-  border-bottom-left-radius: 2px;
-}
-.strategy-tag {
-  font-size: 12px;
-  color: #999;
-  margin-top: 8px;
-  font-style: italic;
 }
 .chat-input {
   margin-top: 15px;

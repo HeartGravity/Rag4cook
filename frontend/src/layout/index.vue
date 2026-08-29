@@ -1,36 +1,40 @@
 <!-- src/layout/index.vue -->
 <template>
   <div class="dynamic-bg">
-    <!-- 引入侧边栏 -->
     <Sidebar />
-
-    <!-- 主内容区 -->
-    <main class="main-content">
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
-    </main>
+    <div class="main-container">
+      <HeaderBar />
+      <main class="main-content">
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </main>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import Sidebar from "./components/Sidebar.vue";
+import HeaderBar from "./components/HeaderBar.vue";
 </script>
 
 <style scoped lang="scss">
-.main-content {
+.main-container {
   flex: 1;
-  /* 留出一点左侧感应区的空间 */
   margin-left: var(--sidebar-collapsed-width);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.main-content {
+  margin-top: 40px; /* 留出 HeaderBar 的高度 */
   padding: 30px;
-  height: 100vh;
+  height: calc(100vh - 40px);
   box-sizing: border-box;
   overflow-y: auto;
 }
-
-/* 页面切换动画 */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;

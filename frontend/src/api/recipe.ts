@@ -12,3 +12,11 @@ export const getKnowledgeCategories = () => {
 export const getKnowledgeItems = (category: string, limit = 10) => {
   return request.get("/api/knowledge/items", { params: { category, limit } });
 };
+
+export const uploadRecipe = (formData: FormData) => {
+  return request.post("/api/recipes/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
