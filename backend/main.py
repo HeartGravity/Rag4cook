@@ -1,4 +1,6 @@
 import logging
+import sys
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,6 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from services.rag_service import rag_system
 
 from api import chat, recipe, knowledge
+
+# 将项目根目录（Rag4cook）添加到 sys.path
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 logger = logging.getLogger(__name__)
 

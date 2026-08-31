@@ -2,7 +2,8 @@
 基于图数据库的RAG系统配置文件
 """
 
-from dataclasses import dataclass
+import os
+from dataclasses import dataclass, field
 from typing import Dict, Any
 
 @dataclass
@@ -16,14 +17,15 @@ class GraphRAGConfig:
     neo4j_database: str = "neo4j"
 
     # Milvus配置
-    milvus_host: str = "localhost"
-    milvus_port: int = 19530
+    # milvus_host: str = "localhost"
+    # milvus_port: int = 19530
+    milvus_uri: str = field(default_factory=lambda: os.getenv("MILVUS_URI", "./milvus_knowledge.db"))  # milvus lite b
     milvus_collection_name: str = "cooking_knowledge"
     milvus_dimension: int = 512  # BGE-small-zh-v1.5的向量维度
 
     # 模型配置
     embedding_model: str = "BAAI/bge-small-zh-v1.5"
-    llm_model: str = "qwen3.6-flash"
+    llm_model: str = "qwen3.6-plus"
 
     # 检索配置（LightRAG Round-robin策略）
     top_k: int = 5
@@ -59,8 +61,9 @@ class GraphRAGConfig:
             'neo4j_user': self.neo4j_user,
             'neo4j_password': self.neo4j_password,
             'neo4j_database': self.neo4j_database,
-            'milvus_host': self.milvus_host,
-            'milvus_port': self.milvus_port,
+            # 'milvus_host': self.milvus_host,
+            # 'milvus_port': self.milvus_port,
+            'milvus_uri': self.milvus_uri,
             'milvus_collection_name': self.milvus_collection_name,
             'milvus_dimension': self.milvus_dimension,
             'embedding_model': self.embedding_model,

@@ -75,8 +75,9 @@ class AdvancedGraphRAGSystem:
             # 2. 向量索引模块
             print("初始化Milvus向量索引...")
             self.index_module = MilvusIndexConstructionModule(
-                host=self.config.milvus_host,
-                port=self.config.milvus_port,
+                # host=self.config.milvus_host,
+                # port=self.config.milvus_port,
+                uri=self.config.milvus_uri,
                 collection_name=self.config.milvus_collection_name,
                 dimension=self.config.milvus_dimension,
                 model_name=self.config.embedding_model

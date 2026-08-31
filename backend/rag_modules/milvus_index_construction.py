@@ -17,8 +17,9 @@ class MilvusIndexConstructionModule:
     """Milvus索引构建模块 - 负责向量化和Milvus索引构建"""
 
     def __init__(self, 
-                 host: str = "localhost", 
-                 port: int = 19530,
+                 # host: str = "localhost", 
+                 # port: int = 19530,
+                 uri: str = "./milvus_knowledge.db",
                  collection_name: str = "cooking_knowledge",
                  dimension: int = 512,
                  model_name: str = "BAAI/bge-small-zh-v1.5"):
@@ -32,8 +33,9 @@ class MilvusIndexConstructionModule:
             dimension: 向量维度
             model_name: 嵌入模型名称
         """
-        self.host = host
-        self.port = port
+        # self.host = host
+        # self.port = port
+        self.uri = uri
         self.collection_name = collection_name
         self.dimension = dimension
         self.model_name = model_name
@@ -63,12 +65,10 @@ class MilvusIndexConstructionModule:
     def _setup_client(self):
         """初始化Milvus客户端"""
         try:
-            self.client = MilvusClient(
-                uri=f"http://{self.host}:{self.port}"
-            )
-            logger.info(f"已连接到Milvus服务器: {self.host}:{self.port}")
+            # 直接使用传入的 uri
+            self.client = MilvusClient(uri=self.uri)
+            logger.info(f"已连接到Milvus Lite本地数据库: {self.uri}")
             
-            # 测试连接
             collections = self.client.list_collections()
             logger.info(f"连接成功，当前集合: {collections}")
             

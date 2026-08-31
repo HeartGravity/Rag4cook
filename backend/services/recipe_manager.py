@@ -5,10 +5,10 @@ import os
 import uuid
 from typing import Tuple, Dict
 from fastapi import UploadFile
-from langchain_core.docuemnts import Document
+from langchain_core.documents import Document
 
 # 引入已有的 AI Agent
-from agent.recipe_ai_agent import KimiRecipeAgent, RecipeInfo, BailianRecipeAgent
+from agent.recipe_ai_agent import RecipeInfo, RecipeAgent
 from services.rag_service import rag_system
 
 logger = logging.getLogger(__name__)
@@ -19,8 +19,8 @@ class RecipeManager:
         # self.kimi_api_key = os.getenv("KIMI_API_KEY", "your_kimi_api_key")
         # self.agent = KimiRecipeAgent(api_key=self.kimi_api_key)
         self.api_key = os.getenv("DASHSCOPE_API_KEY", "")
-        self.llm_model = os.getenv("LLM_MODEL", "qwen3.6-flash")
-        self.agent = BailianRecipeAgent(api_key=self.api_key, llm_model=self.llm_model)
+        self.llm_model = os.getenv("LLM_MODEL", "qwen3.6-plus")
+        self.agent = RecipeAgent(api_key=self.api_key, model_name=self.llm_model)
 
     def validate_markdown_structure(self, content: str) -> Tuple[bool, str]:
         """
