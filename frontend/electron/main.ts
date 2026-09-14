@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import { fileURLToPath } from "node:url";
 
@@ -12,9 +12,11 @@ let win: BrowserWindow | null = null;
 
 const createWindow = () => {
   win = new BrowserWindow({
-    title: "智能烹饪助手",
+    title: " ",
     width: 1200,
     height: 800,
+    frame: false,
+    autoHideMenuBar: true,
     minWidth: 900,
     minHeight: 650,
     webPreferences: {
@@ -22,6 +24,24 @@ const createWindow = () => {
       nodeIntegration: true,
       contextIsolation: true,
     },
+  });
+
+  ipcMain.on("window-minimize", () => {
+    if (win) win.minimize();
+  });
+
+  ipcMain.on("window-maximize", () => {
+    if (win) {
+      if (win.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win.maximize();
+      }
+    }
+  });
+
+  ipcMain.on("window-close", () => {
+    if (win) win.close();
   });
 
   // 开发环境下加载 Vite 本地服务，生产环境加载打包后的 HTML

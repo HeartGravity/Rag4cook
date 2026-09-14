@@ -27,7 +27,7 @@
       <div class="recipe-grid">
         <!-- 替换为通用组件 -->
         <RecipeCard
-          v-for="recipe in mockRecipes"
+          v-for="recipe in recommendedRecipes"
           :key="recipe.id"
           :recipe="recipe"
           @click="goToRecommend"
@@ -38,19 +38,24 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from "vue"; // 新增引入
 import { useRouter } from "vue-router";
 import { ChatLineRound } from "@element-plus/icons-vue";
-import RecipeCard from "@/components/RecipeCard.vue"; // 引入通用卡片组件
+import RecipeCard from "@/components/RecipeCard.vue";
+import { getRecommendRecipes } from "@/api/recipe"; // 引入获取推荐菜谱的API
 
 const router = useRouter();
+const recommendedRecipes = ref<any[]>([]); // 替换原来的 mockRecipes
 
-// 为首页配置一组 Mock 数据来填充 RecipeCard
-const mockRecipes = [
-  { id: "1", name: "宫保鸡丁", difficulty: 3, tags: ["川菜", "家常菜"] },
-  { id: "2", name: "清蒸鲈鱼", difficulty: 2, tags: ["粤菜", "海鲜"] },
-  { id: "3", name: "红烧肉", difficulty: 4, tags: ["下饭", "经典"] },
-  { id: "4", name: "麻婆豆腐", difficulty: 2, tags: ["川菜", "素食"] },
-];
+// 挂载时调用后端API
+onMounted(async () => {
+  try {
+    const res = await getRecommendRecipes(4);
+    recommendedRecipes.value = res.data;
+  } catch (error) {
+    console.error("获取首页推荐菜谱失败:", error);
+  }
+});
 
 const goToChat = () => router.push("/chat");
 const goToRecommend = () => router.push("/recommend");

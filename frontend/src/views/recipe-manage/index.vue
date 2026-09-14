@@ -5,22 +5,27 @@
       <div class="manage-header">
         <div>
           <h2>菜谱管理</h2>
-          <p>上传 Markdown 菜谱，经由 AI 解析后入库 RAG 图谱</p>
+          <p>管理图数据库中的菜谱节点</p>
         </div>
-        <el-button type="primary" round @click="dialogVisible = true"
-          >上传新菜谱</el-button
-        >
+        <el-button type="primary" round @click="dialogVisible = true">
+          上传新菜谱
+        </el-button>
       </div>
 
-      <!-- 简单的静态表格占位，实际可接后端获取全部菜谱接口 -->
+      <!-- 数据表格 -->
       <el-table
         :data="tableData"
         style="width: 100%; margin-top: 20px"
-        empty-text="暂无数据"
+        empty-text="暂无菜谱数据"
+        v-loading="loading"
       >
         <el-table-column prop="name" label="菜谱名称" width="180" />
         <el-table-column prop="category" label="分类" width="120" />
-        <el-table-column prop="difficulty" label="难度" />
+        <el-table-column prop="difficulty" label="难度星级">
+          <template #default="scope">
+            <el-rate v-model="scope.row.difficulty" disabled />
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="150">
           <template #default>
             <el-button link type="primary" size="small">编辑</el-button>
@@ -28,6 +33,19 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 分页组件 -->
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
 
       <!-- 上传菜谱弹窗 -->
       <el-dialog v-model="dialogVisible" title="上传菜谱" width="500px">
@@ -59,18 +77,53 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { ElMessage } from "element-plus";
-import { uploadRecipe } from "@/api/recipe";
+import { uploadRecipe, getRecipesList } from "@/api/recipe";
 
 const tableData = ref([]); // 实际项目中此处应调用获取列表接口
+const loading = ref(false);
+
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
+
 const dialogVisible = ref(false);
 const uploading = ref(false);
-
 const uploadForm = ref({
   category: "",
   mdFile: null as File | null,
   imageFile: null as File | null,
+});
+
+// 获取列表数据方法
+const fetchRecipes = async () => {
+  loading.value = true;
+  try {
+    const res = await getRecipesList(currentPage.value, pageSize.value);
+    tableData.value = res.data.data;
+    total.value = res.data.total;
+  } catch (error) {
+    ElMessage.error("获取菜谱列表失败");
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 分页触发事件
+const handleSizeChange = (val: number) => {
+  pageSize.value = val;
+  fetchRecipes();
+};
+
+const handleCurrentChange = (val: number) => {
+  currentPage.value = val;
+  fetchRecipes();
+};
+
+// 页面挂载时初始化数据
+onMounted(() => {
+  fetchRecipes();
 });
 
 const onMdChange = (e: Event) => {
@@ -101,9 +154,12 @@ const submitUpload = async () => {
   uploading.value = true;
   try {
     const res = await uploadRecipe(formData);
-    ElMessage.success(res.data.message || "上传并解析成功");
+    ElMessage.success(res.data.message || "上传成功");
     dialogVisible.value = false;
-    // TODO: 重新获取 tableData
+
+    // 关键：上传成功后重新拉取第一页数据，展现刚插入的菜谱
+    currentPage.value = 1;
+    fetchRecipes();
   } catch (error: any) {
     ElMessage.error(error.response?.data?.detail || "上传失败");
   } finally {
@@ -117,6 +173,11 @@ const submitUpload = async () => {
 .page-container {
   height: 100%;
   overflow-y: auto;
+}
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end; /* 将分页组件靠右对齐 */
 }
 .content-wrapper {
   padding: 30px;

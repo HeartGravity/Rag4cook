@@ -60,7 +60,7 @@ class GraphDataPreparationModule:
             self.driver = GraphDatabase.driver(
                 self.uri, 
                 auth=(self.user, self.password),
-                database=self.database
+                # database=self.database
             )
             logger.info(f"已连接到Neo4j数据库: {self.uri}")
             

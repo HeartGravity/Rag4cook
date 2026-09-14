@@ -19,15 +19,15 @@ async def get_recommended_recipes(limit: int = 4):
     recipes = []
     if rag_system.data_module and rag_system.data_module.driver:
         try:
-            with rag_system.data_module.driver.session() as session:
+            with rag_system.data_module.driver.session(database="neo4j") as session:
                 # 随机抽取指定数量的菜谱
                 result = session.run("""
-                    MATCH (r:Recipe) 
+                    MATCH (r:Concept {contentType: 'Recipe'}) 
                     WITH r, rand() AS weight 
                     ORDER BY weight 
                     LIMIT $limit 
                     RETURN r.nodeId AS id, r.name AS name, 
-                           r.difficulty AS difficulty, r.tags AS tags, r.imageUrl AS image_url
+                           r.difficulty AS difficulty, r.tags AS tags
                 """, limit=limit)
                 
                 for record in result:
@@ -36,7 +36,7 @@ async def get_recommended_recipes(limit: int = 4):
                         "name": record["name"],
                         "difficulty": record["difficulty"] if record["difficulty"] else 3,
                         "tags": record["tags"].split(",") if record["tags"] else ["推荐"],
-                        "image_url": record["image_url"]
+                        "image_url": None
                     })
         except Exception as e:
             logger.error(f"查询推荐菜谱失败: {e}")
@@ -88,3 +88,48 @@ async def upload_recipe(
     except Exception as e:
         logger.error(f"菜谱上传处理失败: {e}")
         raise HTTPException(status_code=500, detail="内部服务器错误，解析入库失败")
+
+@router.get("/list", summary="获取分页菜谱列表")
+async def get_recipe_list(page: int = 1, page_size: int = 10):
+    """
+    从 Neo4j 数据库获取菜谱列表，支持分页
+    """
+    recipes = []
+    total = 0
+    
+    # 确保数据库连接就绪
+    if rag_system.data_module and rag_system.data_module.driver:
+        try:
+            with rag_system.data_module.driver.session(database="neo4j") as session:
+                # 1. 获取数据库中菜谱的总数量
+                count_result = session.run("MATCH (r:Concept {contentType: 'Recipe'}) RETURN count(r) AS total")
+                total = count_result.single()["total"]
+                
+                # 2. 执行分页查询 (SKIP 和 LIMIT)
+                skip = (page - 1) * page_size
+                result = session.run("""
+                    MATCH (r:Concept {contentType: 'Recipe'})
+                    RETURN r.nodeId AS id, r.name AS name, 
+                           r.category AS category, r.difficulty AS difficulty
+                    ORDER BY r.nodeId DESC
+                    SKIP $skip LIMIT $limit
+                """, skip=skip, limit=page_size)
+                
+                # 3. 格式化返回数据
+                for record in result:
+                    recipes.append({
+                        "id": record["id"],
+                        "name": record["name"],
+                        "category": record["category"] or "未分类",
+                        "difficulty": record["difficulty"] or 3
+                    })
+        except Exception as e:
+            logger.error(f"查询菜谱列表失败: {e}")
+            raise HTTPException(status_code=500, detail="数据库查询失败")
+            
+    return {
+        "total": total,
+        "data": recipes,
+        "page": page,
+        "page_size": page_size
+    }

@@ -20,3 +20,9 @@ export const uploadRecipe = (formData: FormData) => {
     },
   });
 };
+
+export const getRecipesList = (page = 1, pageSize = 10) => {
+  return request.get("/api/recipes/list", {
+    params: { page, page_size: pageSize },
+  });
+};

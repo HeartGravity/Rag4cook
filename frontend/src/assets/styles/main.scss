@@ -2,10 +2,10 @@
 
 :root {
   /* 暖色调主题变量 */
-  --primary-color: #ff6a00;
-  --secondary-color: #ee0979;
-  --bg-warm-light: #fff5f0;
-  --text-main: #333333;
+  --primary-color: #f7a072;
+  --secondary-color: #f62780;
+  --bg-warm-light: #fbfbf7;
+  --text-main: #4a4a4a;
   --text-light: #ffffff;
   --sidebar-width: 200px;
   --sidebar-collapsed-width: 15px; /* 边缘感应区宽度 */
@@ -26,19 +26,22 @@ html,
 
 /* 动态暖色渐变背景 */
 .dynamic-bg {
-  background: linear-gradient(
-    -45deg,
-    #ff9a9e,
-    #fecfef,
-    #fff1eb,
-    #ffecd2,
-    #fcb69f
-  );
+  background: linear-gradient(-45deg, #fbfbf7, #f9f1f1, #f8eaea, #fff5eb);
   background-size: 400% 400%;
   animation: gradientBG 15s ease infinite;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.glass-panel {
+  /* 增加透明度，提升毛玻璃质感，融入背景 */
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.03); /* 减弱阴影，避免脏脏的感觉 */
 }
 
 @keyframes gradientBG {
