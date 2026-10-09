@@ -22,7 +22,7 @@ async def get_recommended_recipes(limit: int = 4):
             with rag_system.data_module.driver.session(database="neo4j") as session:
                 # 随机抽取指定数量的菜谱
                 result = session.run("""
-                    MATCH (r:Concept {contentType: 'Recipe'}) 
+                    MATCH (r:Concept {conceptType: 'Recipe'}) 
                     WITH r, rand() AS weight 
                     ORDER BY weight 
                     LIMIT $limit 
@@ -102,13 +102,13 @@ async def get_recipe_list(page: int = 1, page_size: int = 10):
         try:
             with rag_system.data_module.driver.session(database="neo4j") as session:
                 # 1. 获取数据库中菜谱的总数量
-                count_result = session.run("MATCH (r:Concept {contentType: 'Recipe'}) RETURN count(r) AS total")
+                count_result = session.run("MATCH (r:Concept {conceptType: 'Recipe'}) RETURN count(r) AS total")
                 total = count_result.single()["total"]
                 
                 # 2. 执行分页查询 (SKIP 和 LIMIT)
                 skip = (page - 1) * page_size
                 result = session.run("""
-                    MATCH (r:Concept {contentType: 'Recipe'})
+                    MATCH (r:Concept {conceptType: 'Recipe'})
                     RETURN r.nodeId AS id, r.name AS name, 
                            r.category AS category, r.difficulty AS difficulty
                     ORDER BY r.nodeId DESC
@@ -133,3 +133,87 @@ async def get_recipe_list(page: int = 1, page_size: int = 10):
         "page": page,
         "page_size": page_size
     }
+
+@router.get("/{recipe_id}", summary="获取菜谱详情内容")
+@router.get("/detail/{recipe_id}", summary="获取菜谱详情内容")
+async def get_recipe_detail(recipe_id: str):
+    """
+    根据菜谱的 nodeId 从neo4j中获取菜谱的详细数据（包含了关联食材和步骤）
+    """
+    if not (rag_system.data_module and rag_system.data_module.driver):
+        raise HTTPException(status_code=503, detail="数据库未就绪")
+
+    str_recipe_id = str(recipe_id).strip()
+
+    try:
+        with rag_system.data_module.driver.session(database="neo4j") as session:
+            cypher = """
+            MATCH (r:Concept)
+            WHERE toString(r.nodeId) = $recipe_id
+            
+            OPTIONAL MATCH (r)-[req]-(i:Concept)
+            WHERE type(req) = 'REQUIRES' OR i.conceptType = 'Ingredient'
+            WITH r, collect(DISTINCT CASE WHEN i IS NOT NULL THEN {
+                name: i.name,
+                amount: COALESCE(req.amount, i.amount, ''),
+                unit: COALESCE(req.unit, i.unit, ''),
+                category: i.category,
+                description: i.description
+            } END) AS raw_ingredients
+            
+            OPTIONAL MATCH (r)-[c]-(s:Concept)
+            WHERE type(c) = 'CONTAINS_STEP' OR s.conceptType = 'CookingStep'
+            WITH r, raw_ingredients, collect(DISTINCT CASE WHEN s IS NOT NULL THEN {
+                name: s.name,
+                description: s.description,
+                stepNumber: s.stepNumber,
+                methods: s.methods,
+                tools: s.tools,
+                timeEstimate: s.timeEstimate,
+                stepOrder: COALESCE(c.stepOrder, s.stepNumber, 999)
+            } END) AS raw_steps
+            
+            RETURN r, 
+                   [x IN raw_ingredients WHERE x IS NOT NULL] AS ingredients,
+                   [x IN raw_steps WHERE x IS NOT NULL] AS steps
+            """
+            result = session.run(cypher, recipe_id=str_recipe_id)
+            record = result.single()
+
+            if not record or not record["r"]:
+                # 兼容自定义上传的 :Recipe 标签节点
+                fallback_cypher = "MATCH (r) WHERE toString(r.nodeId) = $recipe_id RETURN r, [] AS ingredients, [] AS steps"
+                fallback_res = session.run(fallback_cypher, recipe_id=str_recipe_id)
+                record = fallback_res.single()
+                if not record or not record["r"]:
+                    raise HTTPException(status_code=404, detail="未找到对应的菜谱")
+
+            node = record["r"]
+            tags = node.get("tags", "")
+            tags_list = tags.split(",") if isinstance(tags, str) and tags else (tags if isinstance(tags, list) else [])
+
+            # 按照步骤对 stepOrder进行升序排序
+            steps = record.get("steps", [])
+            steps.sort(key=lambda item: item.get("stepOrder", 999))
+
+            return {
+                "id": node.get("nodeId"),
+                "name": node.get("name"),
+                "difficulty": node.get("difficulty") or 3,
+                "category": node.get("category") or "",
+                "cuisine_type": node.get("cuisineType") or "",
+                "prep_time": node.get("prepTime") or "",
+                "cook_time": node.get("cookTime") or "",
+                "servings": node.get("servings") or "",
+                "description": node.get("description") or "",
+                "content": node.get("content") or "",
+                "tags": tags_list,
+                "image_url": node.get("imageUrl"),
+                "ingredients": record.get("ingredients", []),
+                "steps": steps
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"查询菜谱详情失败: {e}")
+        raise HTTPException(status_code=500, detail="查询菜谱详情失败")

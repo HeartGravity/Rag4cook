@@ -17,6 +17,9 @@
         <router-link to="/knowledge" class="nav-item" active-class="active">
           <el-icon><Reading /></el-icon> <span>菜谱知识库</span>
         </router-link>
+        <router-link to="/tips" class="nav-item" active-class="active">
+          <el-icon><Opportunity /></el-icon> <span>厨房秘籍</span>
+        </router-link>
         <router-link to="/favorites" class="nav-item" active-class="active">
           <el-icon><Star /></el-icon> <span>我的收藏</span>
         </router-link>
@@ -36,6 +39,7 @@ import {
   Star,
   Setting,
   Reading,
+  Opportunity,
 } from "@element-plus/icons-vue";
 </script>
 

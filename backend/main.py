@@ -2,17 +2,19 @@ import logging
 import sys
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-from services.rag_service import rag_system
-
-from api import chat, recipe, knowledge
 
 # 将项目根目录（Rag4cook）添加到 sys.path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
+    
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from services.rag_service import rag_system
+
+from api import chat, recipe, knowledge, tips
+
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +58,7 @@ app.add_middleware(
 app.include_router(chat.router, prefix="/api/chat", tags=["智能问答"])
 app.include_router(recipe.router, prefix="/api/recipes", tags=["菜谱管理"])
 app.include_router(knowledge.router, prefix="/api/knowledge", tags=["厨房知识库"])
+app.include_router(tips.router, prefix="/api/tips", tags=["厨房小技巧"])
 
 if __name__ == "__main__":
     import uvicorn

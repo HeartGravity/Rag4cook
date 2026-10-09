@@ -5,12 +5,22 @@ export const getRecommendRecipes = (limit = 4) => {
   return request.get("/api/recipes/recommend", { params: { limit } });
 };
 
+export const getRecipeDetail = (recipeId: string) => {
+  return request.get(`/api/recipes/${recipeId}`);
+};
+
 export const getKnowledgeCategories = () => {
   return request.get("/api/knowledge/categories");
 };
 
-export const getKnowledgeItems = (category: string, limit = 10) => {
-  return request.get("/api/knowledge/items", { params: { category, limit } });
+export const getKnowledgeItems = (
+  category: string,
+  page = 1,
+  pageSize = 10,
+) => {
+  return request.get("/api/knowledge/items", {
+    params: { category, page, page_size: pageSize },
+  });
 };
 
 export const uploadRecipe = (formData: FormData) => {

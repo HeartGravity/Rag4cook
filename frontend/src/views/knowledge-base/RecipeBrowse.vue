@@ -2,11 +2,10 @@
 <template>
   <div class="page-container">
     <div class="glass-panel content-wrapper">
-      <h2>厨房知识库</h2>
-      <p>探索 Neo4j 图数据库中的烹饪智慧</p>
-
+      <h2>菜谱知识库</h2>
+      <p>探索 Neo4j 图谱中的结构化做菜指南</p>
       <div class="knowledge-layout">
-        <!-- 左侧分类 -->
+        <!-- 分类侧边栏 -->
         <div class="category-sidebar">
           <div
             v-for="cat in categories"
@@ -18,26 +17,62 @@
           </div>
         </div>
 
-        <!-- 右侧内容 -->
+        <!-- 知识列表 -->
         <div class="knowledge-content" v-loading="loading">
-          <el-empty v-if="items.length === 0" description="该分类下暂无数据" />
-          <!-- 替换为通用组件 -->
-          <KnowledgeCard v-for="item in items" :key="item.id" :item="item" />
+          <el-empty v-if="items.length === 0" description="暂无该分类数据" />
+
+          <template v-else>
+            <KnowledgeCard
+              v-for="item in items"
+              :key="item.id"
+              :item="item"
+              @click="openDetail(item.id)"
+            />
+
+            <!-- 分页条 -->
+            <div class="pagination-container">
+              <el-pagination
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="[10, 20, 50]"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="total"
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+              />
+            </div>
+          </template>
         </div>
       </div>
     </div>
+
+    <!-- 菜谱详情弹窗 -->
+    <RecipeDetailModal
+      v-model="detailModalVisible"
+      :recipe-id="selectedRecipeId"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { getKnowledgeCategories, getKnowledgeItems } from "@/api/recipe";
-import KnowledgeCard from "@/components/KnowledgeCard.vue"; // 引入通用卡片组件
+import KnowledgeCard from "@/components/KnowledgeCard.vue";
+import RecipeDetailModal from "@/components/RecipeDetailModal.vue";
 
 const categories = ref<string[]>([]);
 const activeCategory = ref("");
 const items = ref<any[]>([]);
 const loading = ref(false);
+
+// 分页状态
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
+
+// 详情弹窗控制
+const detailModalVisible = ref(false);
+const selectedRecipeId = ref<string | null>(null);
 
 const loadCategories = async () => {
   try {
@@ -51,17 +86,43 @@ const loadCategories = async () => {
   }
 };
 
-const selectCategory = async (cat: string) => {
-  activeCategory.value = cat;
+const fetchItems = async () => {
   loading.value = true;
   try {
-    const res = await getKnowledgeItems(cat);
-    items.value = res.data || [];
+    const res = await getKnowledgeItems(
+      activeCategory.value,
+      currentPage.value,
+      pageSize.value,
+    );
+    items.value = res.data.items || [];
+    total.value = res.data.total || 0;
   } catch (e) {
-    console.error("加载知识项失败", e);
+    console.error("加载菜谱列表失败", e);
   } finally {
     loading.value = false;
   }
+};
+
+const selectCategory = (cat: string) => {
+  activeCategory.value = cat;
+  currentPage.value = 1; // 切换分类重置页码
+  fetchItems();
+};
+
+const handleSizeChange = (val: number) => {
+  pageSize.value = val;
+  currentPage.value = 1;
+  fetchItems();
+};
+
+const handleCurrentChange = (val: number) => {
+  currentPage.value = val;
+  fetchItems();
+};
+
+const openDetail = (id: string) => {
+  selectedRecipeId.value = id;
+  detailModalVisible.value = true;
 };
 
 onMounted(() => {
@@ -74,40 +135,57 @@ onMounted(() => {
   height: 100%;
   overflow-y: auto;
 }
+
 .content-wrapper {
   padding: 30px;
   min-height: 100%;
   box-sizing: border-box;
 }
+
 .knowledge-layout {
   display: flex;
   gap: 20px;
   margin-top: 20px;
 }
+
 .category-sidebar {
-  width: 200px;
+  width: 180px;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
+  flex-shrink: 0;
+
+  .category-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.25s;
+    color: #555;
+    font-size: 15px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    &.active {
+      background: var(--primary-color);
+      color: white;
+      font-weight: 500;
+    }
+  }
 }
-.category-item {
-  padding: 10px 15px;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.3s;
-  color: #555;
-}
-.category-item:hover {
-  background: rgba(0, 0, 0, 0.02);
-}
-.category-item.active {
-  background: var(--primary-color);
-  color: white;
-}
+
 .knowledge-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+
+  .pagination-container {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: flex-end;
+  }
 }
 </style>

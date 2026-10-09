@@ -29,5 +29,32 @@ class KnowledgeItem(BaseModel):
     id: str
     title: str
     category: str
+    difficulty: Optional[int] = 3
+    ingredients: Optional[List[str]] = []
     summary: Optional[str] = None
     content: Optional[str] = None
+
+class KnowledgeListResponse(BaseModel):
+    total: int
+    items: List[KnowledgeItem]
+    page: int
+    page_size: int
+
+class TipItem(BaseModel):
+    id: str
+    title: str
+    category: str
+    difficulty: Optional[int] = 1
+    description: Optional[str] = None
+    methods: Optional[str] = None
+    tools: Optional[str] = None
+    safety_warnings: Optional[str] = None
+    tags: Optional[List[str]] = []
+    time_estimate: Optional[str] = None
+    related_count: Optional[int] = 0
+
+class TipListResponse(BaseModel):
+    total: int
+    items: List[TipItem]
+    page: int
+    page_size: int

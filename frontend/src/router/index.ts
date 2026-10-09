@@ -37,10 +37,14 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: "菜谱与知识库" },
       },
       {
+        path: "tips",
+        name: "KitchenTips",
+        component: () => import("@/views/tips/index.vue"),
+        meta: { title: "厨房秘籍" },
+      },
+      {
         path: "recommend",
-        name: "Recommend",
-        component: () => import("@/views/recommend/index.vue"),
-        meta: { title: "今日吃什么" },
+        redirect: "/home",
       },
       {
         path: "favorites",
